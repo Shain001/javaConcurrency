@@ -2,11 +2,10 @@ package com.shain.demo.concurrentSum;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
+import java.util.concurrent.TimeUnit;
 
 public class ConcurrentSum {
     private static class Sum {
@@ -44,5 +43,15 @@ public class ConcurrentSum {
 
         int result = results.stream().map(CompletableFuture::join).reduce(0, Integer::sum);
         System.out.println(result);
+
+        try {
+            threadPool.shutdown();
+            if (!threadPool.awaitTermination(1000, TimeUnit.MINUTES))
+                threadPool.shutdownNow();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } finally {
+            threadPool.shutdownNow();
+        }
     }
 }
