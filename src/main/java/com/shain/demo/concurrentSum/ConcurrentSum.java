@@ -8,36 +8,25 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class ConcurrentSum {
-    private static class Sum {
-        private int i;
-
-        public Sum(int i) {
-            this.i = i;
-        }
-
-
-        public Integer doSum() {
-            int sum = 0;
-
-            for (int j = 1; j <= 10; j++) {
-                try {
-                    Thread.sleep(100);
-                } catch (Exception e) {
-                    System.out.println(e.getMessage());
-                }
-                sum += j + i * 10;
-            }
-            return sum;
-        }
-    }
-
     public static void main(String[] args) {
         ExecutorService threadPool = Executors.newFixedThreadPool(10);
         List<CompletableFuture<Integer>> results = new ArrayList<>();
 
         for (int i = 0; i < 10; i++) {
             int finalI = i;
-            CompletableFuture<Integer> c = CompletableFuture.supplyAsync(() -> new Sum(finalI).doSum(), threadPool);
+            CompletableFuture<Integer> c = CompletableFuture.supplyAsync(() -> {
+                int result = 0;
+                for (int j = 1; j <= 10; j++) {
+                    result += j + finalI*10;
+                    try{
+                        System.out.println(Thread.currentThread());
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                return result;
+            }, threadPool);
             results.add(c);
         }
 
@@ -46,7 +35,7 @@ public class ConcurrentSum {
 
         try {
             threadPool.shutdown();
-            if (!threadPool.awaitTermination(1000, TimeUnit.MINUTES))
+            if (!threadPool.awaitTermination(10, TimeUnit.MINUTES))
                 threadPool.shutdownNow();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
